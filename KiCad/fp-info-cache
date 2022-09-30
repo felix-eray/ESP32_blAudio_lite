@@ -1,4 +1,4 @@
-20386606885763233
+20388271421432936
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -86029,3 +86029,10 @@ Adafruit Feather
 0
 28
 28
+custom_footprints
+ASJ-99H
+
+
+0
+6
+6
