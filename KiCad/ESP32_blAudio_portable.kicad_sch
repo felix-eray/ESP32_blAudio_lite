@@ -3285,7 +3285,7 @@
     (in_bom yes) (on_board yes) (fields_autoplaced)
     (uuid 7daad98a-6199-4c54-9ede-821fd2d474ad)
     (property "Reference" "Q2" (id 0) (at 227.33 113.03 90))
-    (property "Value" "Q_PMOS_DGS" (id 1) (at 227.33 115.57 90))
+    (property "Value" "PJS6403" (id 1) (at 227.33 115.57 90))
     (property "Footprint" "Package_TO_SOT_SMD:SOT-23-6" (id 2) (at 229.87 118.11 0)
       (effects (font (size 1.27 1.27)) hide)
     )
@@ -4580,7 +4580,7 @@
       (reference "Q1") (unit 1) (value "2N7002") (footprint "Package_TO_SOT_SMD:SOT-323_SC-70")
     )
     (path "/7daad98a-6199-4c54-9ede-821fd2d474ad"
-      (reference "Q2") (unit 1) (value "Q_PMOS_DGS") (footprint "Package_TO_SOT_SMD:SOT-23-6")
+      (reference "Q2") (unit 1) (value "PJS6403") (footprint "Package_TO_SOT_SMD:SOT-23-6")
     )
     (path "/75a8b4cf-be6c-4d23-8740-2e62cd0245ef/9e63908d-f4de-4538-8c1e-c9fc793744b4"
       (reference "Q3") (unit 1) (value "2N7002") (footprint "Package_TO_SOT_SMD:SOT-323_SC-70")
