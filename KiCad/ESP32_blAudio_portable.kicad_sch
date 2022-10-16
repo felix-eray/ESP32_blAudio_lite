@@ -2594,9 +2594,9 @@
     (effects (font (size 1.58 1.58)) (justify right bottom))
     (uuid c683ed5d-beab-499d-93fe-8b874d56c1c7)
   )
-  (text "Changes to next version:\n-series resistor to ESP32's EN line\n-(low) optimize pot and encoder footprints"
-    (at 96.52 -20.32 0)
-    (effects (font (size 1.27 1.27)) (justify left bottom))
+  (text "Changes to next version:\n-series resistor to ESP32's EN line\n-(low) optimize pot and encoder footprints\n-GPIOs 36, 39, 34 and 35 are INPUT ONLY"
+    (at 96.52 7.62 0)
+    (effects (font (size 2.54 2.54)) (justify left bottom))
     (uuid c9ee6dcb-0e04-4173-9a61-6b308e55d8af)
   )
   (text "power-up\nbutton" (at 245.11 148.59 0)

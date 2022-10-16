@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../../../../My Drive/KiCAD/ESP32_blAudio_lite/VScode"
+		},
+		{
+			"name": "BlinkLed",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
