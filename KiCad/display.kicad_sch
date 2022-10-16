@@ -1906,7 +1906,7 @@
     (property "Footprint" "Package_SO:SOIC-16W_7.5x10.3mm_P1.27mm" (id 2) (at 184.15 69.85 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Datasheet" "http://www.nxp.com/documents/data_sheet/PCF8574_PCF8574A.pdf" (id 3) (at 184.15 69.85 0)
+    (property "Datasheet" "https://www.ti.com/lit/ds/symlink/pcf8574.pdf" (id 3) (at 184.15 69.85 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (pin "1" (uuid e59460f5-f69c-4146-bc53-65a65f085aa4))
