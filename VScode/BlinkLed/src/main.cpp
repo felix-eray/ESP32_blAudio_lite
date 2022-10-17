@@ -96,6 +96,8 @@ void setup() {
   Wire.write(0x30); //-0 db
   Wire.endTransmission(true);
   //Wire.requestFrom(0b1101110, 2, true);
+
+  writeBassTreble(0b1101110, 3, 2);
 }
 
 // the loop function runs over and over again forever
@@ -129,4 +131,27 @@ void loop() {
     //digitalWrite(pwrEN, LOW);
 
   loops++;
+}
+
+
+uint8_t writeBassTreble(int i2cAddress, int bassLevel, int trebleLevel){
+
+  //check that values are in range
+  if( (bassLevel > 9 || bassLevel < -9) || (trebleLevel > 9 || trebleLevel < -9) ){
+    return 0;
+  }
+
+  uint8_t treble = 9 + trebleLevel;
+  uint8_t bass = 9 + bassLevel;
+
+  uint8_t MSbyte = (treble << 1) | (1 << 0);
+  uint8_t LSbyte = (bass << 2) | (0 << 0);
+
+  Wire.beginTransmission(i2cAddress);
+  Wire.write(0x11); //bass and treble control 0x11
+  Wire.write(MSbyte);
+  Wire.write(LSbyte);
+  Wire.endTransmission(true);
+
+  return 1;
 }
