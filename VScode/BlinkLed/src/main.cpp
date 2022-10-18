@@ -3,6 +3,8 @@
 #include <driver/ledc.h>
 #include "Wire.h"
 
+uint8_t writeBassTreble(int , int , int );
+
 ESP32Encoder encoder;
 
 const int PWMPin = 1; 
@@ -83,6 +85,7 @@ void setup() {
 
   delay(10);
   digitalWrite(adcEN, HIGH);
+  delay(100);
   //Serial.begin(115200);
 
   Wire.beginTransmission(0b1101110);
@@ -97,7 +100,7 @@ void setup() {
   Wire.endTransmission(true);
   //Wire.requestFrom(0b1101110, 2, true);
 
-  writeBassTreble(0b1101110, 3, 2);
+  writeBassTreble(0b1101110, 5, 5);
 }
 
 // the loop function runs over and over again forever
