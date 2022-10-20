@@ -79,28 +79,30 @@ void setup() {
   //write PWM to output pin.
   ledcWrite(PWMChannel, dutyCycle);
 
-  //GPIO_FUNC1_OUT_SEL_CFG_REG = 71;
-  //*(uint32_t*)IO_MUX_GPIO1_REG |= (2 << 12);
   *((volatile uint32_t *) (IO_MUX_GPIO1_REG)) = ((*(volatile uint32_t *) (IO_MUX_GPIO1_REG)) & ~(3 << 10));// | (1 << 10);
 
-  delay(10);
+  delay(100);
   digitalWrite(adcEN, HIGH);
   delay(100);
+
+  //note, the ADC for the 3,5mm jack input needs the 12.288 MHz master clock and serial port will use that pin
   //Serial.begin(115200);
+
+  Wire.beginTransmission(0b1101110);
+  Wire.write(0x13); //volume control 0x13
+  Wire.write(0x10);
+  Wire.write(0x30); //-0 db
+  Wire.endTransmission(true);
+
+  writeBassTreble(0b1101110, 5, 5);
+
+  delay(100);
 
   Wire.beginTransmission(0b1101110);
   Wire.write(0x00); //device control 0x00
   Wire.write(0x00);
   Wire.write(0x19); //input 2, amp output on, TF9789 powered
   Wire.endTransmission(true);
-  Wire.beginTransmission(0b1101110);
-  Wire.write(0x13); //volume control 0x13
-  Wire.write(0x10);
-  Wire.write(0x30); //-0 db
-  Wire.endTransmission(true);
-  //Wire.requestFrom(0b1101110, 2, true);
-
-  writeBassTreble(0b1101110, 5, 5);
 }
 
 // the loop function runs over and over again forever
