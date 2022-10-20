@@ -2,10 +2,12 @@
 #include <ESP32Encoder.h>
 #include <driver/ledc.h>
 #include "Wire.h"
+#include "TFA9879.h"
 
 uint8_t writeBassTreble(int , int , int );
 
 ESP32Encoder encoder;
+TFA9879 TFA[2];
 
 const int PWMPin = 1; 
 const int PWMChannel = 0;
@@ -63,6 +65,12 @@ void setup() {
   Wire.setPins((int)I2C_SDA, (int)I2C_SCL);
   initialized = Wire.begin(I2C_SDA, I2C_SCL, (uint32_t)100000);
 
+  TFA_init(&TFA[0]);
+  TFA_init(&TFA[1]);
+
+  TFA_setAddress(&TFA[0], 0b1101110); //upper SB closed
+  TFA_setAddress(&TFA[1], 0b1101111); //both SBs open
+
   delay(10);
 
   ESP32Encoder::useInternalWeakPullResistors=UP;
@@ -88,13 +96,17 @@ void setup() {
   //note, the ADC for the 3,5mm jack input needs the 12.288 MHz master clock and serial port will use that pin
   //Serial.begin(115200);
 
+  /*
   Wire.beginTransmission(0b1101110);
   Wire.write(0x13); //volume control 0x13
   Wire.write(0x10);
   Wire.write(0x30); //-0 db
   Wire.endTransmission(true);
+  */
 
-  writeBassTreble(0b1101110, 5, 5);
+
+  TFA_setVolume(&TFA[0], 0);
+  TFA_setBassTreble(&TFA[0], 5, 5);
 
   delay(100);
 
@@ -136,27 +148,4 @@ void loop() {
     //digitalWrite(pwrEN, LOW);
 
   loops++;
-}
-
-
-uint8_t writeBassTreble(int i2cAddress, int bassLevel, int trebleLevel){
-
-  //check that values are in range
-  if( (bassLevel > 9 || bassLevel < -9) || (trebleLevel > 9 || trebleLevel < -9) ){
-    return 0;
-  }
-
-  uint8_t treble = 9 + trebleLevel;
-  uint8_t bass = 9 + bassLevel;
-
-  uint8_t MSbyte = (treble << 1) | (1 << 0);
-  uint8_t LSbyte = (bass << 2) | (0 << 0);
-
-  Wire.beginTransmission(i2cAddress);
-  Wire.write(0x11); //bass and treble control 0x11
-  Wire.write(MSbyte);
-  Wire.write(LSbyte);
-  Wire.endTransmission(true);
-
-  return 1;
 }
