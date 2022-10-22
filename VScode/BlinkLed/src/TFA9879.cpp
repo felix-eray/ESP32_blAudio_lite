@@ -38,13 +38,16 @@ void TFA_setAddress(TFA9879 *TFA, uint8_t address){
 uint8_t TFA_setVolume(TFA9879 *TFA, int volumeLevel)
 {
     //check that values are in range
-    if( volumeLevel > 24 || volumeLevel < -70){
-        return 0;
+    if(volumeLevel > 24){
+        volumeLevel = 24;
+    }
+    else if(volumeLevel < -71){
+        volumeLevel = -71;
     }
 
     uint8_t volume = 48 - (volumeLevel * 2);
 
-    TFA->volumeControl = (TFA->bassTreble & ~(0xFF)) | (volume);
+    TFA->volumeControl = (TFA->volumeControl & ~(0xFF)) | (volume);
 
     Wire.beginTransmission(TFA->I2Caddress);
     Wire.write(0x13); //volume control 0x13
@@ -74,6 +77,64 @@ uint8_t TFA_setBassTreble(TFA9879 *TFA, int bassLevel, int trebleLevel)
     Wire.write(TFA->bassTreble >> 8);
     Wire.write(TFA->bassTreble);
     Wire.endTransmission(true);
+
+    return 1;
+}
+
+uint8_t TFA_setBassTrebleCfrequency(TFA9879 *TFA, int bassCorner, int trebleCorner)
+{
+
+    TFA->bassTreble = (TFA->bassTreble & ~(3 << 7)) | (trebleCorner << 7);
+    TFA->bassTreble = (TFA->bassTreble & ~(3 << 0)) | (bassCorner << 0);
+
+    Wire.beginTransmission(TFA->I2Caddress);
+    Wire.write(0x11); // bass and treble control 0x11
+    Wire.write(TFA->bassTreble >> 8);
+    Wire.write(TFA->bassTreble);
+    Wire.endTransmission(true);
+
+    return 1;
+}
+
+uint8_t TFA_setDeviceControl(TFA9879 *TFA, int powerMode, int i2sInput)
+{
+    TFA->deviceControl = (TFA->deviceControl & ~(1 << 4)) | (i2sInput << 4);
+    TFA->deviceControl = ((TFA->deviceControl & ~(1 << 0)) | (TFA->deviceControl & ~(1 << 3))) | (powerMode << 0) | (powerMode << 3);
+
+    Wire.beginTransmission(TFA->I2Caddress);
+    Wire.write(0x00); // device control 0x00
+    Wire.write(TFA->deviceControl >> 8);
+    Wire.write(TFA->deviceControl); // input 2, amp output on, TF9789 powered
+    Wire.endTransmission(true);
+
+    return 1;
+}
+
+uint8_t TFA_setLRchannel(TFA9879 *TFA, int LRconf, int i2sChannel)
+{
+    //configure correct I2S-input channel (1 or 2)
+    if(i2sChannel == 0){
+        TFA->serialInterface1 = (TFA->serialInterface1 & ~(3 << 10)) | (LRconf << 10);
+
+        Wire.beginTransmission(TFA->I2Caddress);
+        Wire.write(0x01); // serial interface control 1 0x01
+        Wire.write(TFA->serialInterface1 >> 8);
+        Wire.write(TFA->serialInterface1);
+        Wire.endTransmission(true);
+
+        return 1;
+    }
+    else{
+        TFA->serialInterface2 = (TFA->serialInterface2 & ~(3 << 10)) | (LRconf << 10);
+
+        Wire.beginTransmission(TFA->I2Caddress);
+        Wire.write(0x03); // serial interface control 2 0x03
+        Wire.write(TFA->serialInterface2 >> 8);
+        Wire.write(TFA->serialInterface2);
+        Wire.endTransmission(true);
+
+        return 1;
+    }
 
     return 1;
 }

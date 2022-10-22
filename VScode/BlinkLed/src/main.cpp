@@ -28,8 +28,8 @@ const int pushButton3 = 15;
 const int I2C_SDA = 14;
 const int I2C_SCL = 27;
 const int pwrEN = 12;
-const int en5V = 39;
-const int sw3_5mm = 13;
+const int en5V = 13;
+const int sw3_5mm = 35;
 const int LRCK1 = 19;
 const int LRCK2 = 22;
 const int BCLK1 = 18;
@@ -44,8 +44,6 @@ const int MCLK = 1;
 //(JP4/JP2) closed, (JP5/JP3) open: 0b1101110
 //(JP4/JP2) open, (JP5/JP3) closed: 0b1101101
 
-bool initialized = 0;
-
 //PCF8574A, I2C-address 0b0111ZYX, solder bridge open = 1, closed = 0, (JP6) = X, (JP7) = Y, (JP8) = Z 
 
 // the setup function runs once when you press reset or power the board
@@ -56,14 +54,14 @@ void setup() {
   pinMode(adcEN, OUTPUT);
   pinMode(pwrEN, OUTPUT);
   pinMode(en5V, OUTPUT);
+  pinMode(anaPot, INPUT);
 
   digitalWrite(adcEN, LOW);
   digitalWrite(pwrEN, HIGH);
   digitalWrite(en5V, LOW);
 
-
   Wire.setPins((int)I2C_SDA, (int)I2C_SCL);
-  initialized = Wire.begin(I2C_SDA, I2C_SCL, (uint32_t)100000);
+  Wire.begin(I2C_SDA, I2C_SCL, (uint32_t)100000);
 
   TFA_init(&TFA[0]);
   TFA_init(&TFA[1]);
@@ -96,56 +94,77 @@ void setup() {
   //note, the ADC for the 3,5mm jack input needs the 12.288 MHz master clock and serial port will use that pin
   //Serial.begin(115200);
 
-  /*
-  Wire.beginTransmission(0b1101110);
-  Wire.write(0x13); //volume control 0x13
-  Wire.write(0x10);
-  Wire.write(0x30); //-0 db
-  Wire.endTransmission(true);
-  */
-
-
   TFA_setVolume(&TFA[0], 0);
   TFA_setBassTreble(&TFA[0], 5, 5);
+  TFA_setBassTrebleCfrequency(&TFA[0], 0, 2);
+
+  TFA_setVolume(&TFA[1], 0);
+  TFA_setBassTreble(&TFA[1], 5, 5);
+  TFA_setBassTrebleCfrequency(&TFA[1], 0, 2);
+
+  TFA_setLRchannel(&TFA[0], 0, 1);  //set TFA #1 amp's I2S-channel 2, to left channel only
+  TFA_setLRchannel(&TFA[1], 1, 1);  //set TFA #2 amp's I2S-channel 2, to right channel only
 
   delay(100);
 
-  Wire.beginTransmission(0b1101110);
-  Wire.write(0x00); //device control 0x00
-  Wire.write(0x00);
-  Wire.write(0x19); //input 2, amp output on, TF9789 powered
-  Wire.endTransmission(true);
+  TFA_setDeviceControl(&TFA[0], 1, 1);  //TFA #1 amp, use I2S channel #2, power on and amp on
+  TFA_setDeviceControl(&TFA[1], 1, 1);  //TFA #2 amp, use I2S channel #2, power on and amp on
+
 }
 
 // the loop function runs over and over again forever
 void loop() {
-  static int loops = 0;
+  static uint32_t tick_volumeAnaRead = millis();
+  static uint32_t tick_blinkLed = millis();
 
-  digitalWrite(ledPin1, HIGH);   // turn the LED on (HIGH is the voltage level)
-  digitalWrite(ledPin2, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(1000);                  // wait for a second
-  digitalWrite(ledPin1, LOW);    // turn the LED off by making the voltage LOW
-  digitalWrite(ledPin2, LOW);    // turn the LED off by making the voltage LOW
-  delay(1000);                  // wait for a second
+  //non-blocking led blink
+  if( tick_blinkLed < millis() ){
+    static int ledState = 0;
+    tick_blinkLed = tick_blinkLed + 1000;
+
+    if( ledState == 0 ){
+      digitalWrite(ledPin1, HIGH);   // turn the LED on (HIGH is the voltage level)
+      digitalWrite(ledPin2, HIGH);   // turn the LED on (HIGH is the voltage level)
+      ledState = 1;
+    }
+    else{
+      digitalWrite(ledPin1, LOW);    // turn the LED off by making the voltage LOW
+      digitalWrite(ledPin2, LOW);    // turn the LED off by making the voltage LOW
+      ledState = 0;
+    }
+  }
 
   
+  //read analog pot reading roughly every 100ms and update volume if reading has changed enough to indicate that the knob has been turned
+  if( tick_volumeAnaRead < millis() ){
+    static int volumeOld = 0;
+    tick_volumeAnaRead = tick_volumeAnaRead + 100;
+
+    int volume = analogRead(anaPot);
+    int difference = volume - volumeOld;
+
+    //check for big enough difference between new and old reading
+    if( difference > 55 || difference < -55 ){
+      volumeOld = volume;
+
+      if(volume == 4095){
+        TFA_setVolume(&TFA[0], 0);
+        TFA_setVolume(&TFA[1], 0);
+      }
+      else if(volume <= 100){
+        TFA_setVolume(&TFA[0], -71);
+        TFA_setVolume(&TFA[1], -71);
+      }
+      else{
+        int setVolume = (volume / 58) - 70;
+        TFA_setVolume(&TFA[0], setVolume);
+        TFA_setVolume(&TFA[1], setVolume);
+      }
+    }
+  }
   
-  
-  /*
-  uint16_t data = 0;
-  while(Wire.available() != 2);
-  data = (Wire.read() << 8);
-  data |= Wire.read();
-  */
   
   
   //Serial.println(encoder.getCount());
-  //Serial.println(initialized);
-  //Serial.println(data, HEX);
-  //Serial.println(*(uint32_t*)GPIO_FUNC1_OUT_SEL_CFG_REG, HEX);
-  //Serial.println(*(uint32_t*)IO_MUX_GPIO1_REG, HEX);
-  if( loops == 30 );
-    //digitalWrite(pwrEN, LOW);
-
-  loops++;
+  //Serial.println(analogRead(anaPot));
 }

@@ -25,3 +25,6 @@ void TFA_setAddress(TFA9879*, uint8_t);
 
 uint8_t TFA_setVolume(TFA9879*, int);
 uint8_t TFA_setBassTreble(TFA9879*, int, int);
+uint8_t TFA_setBassTrebleCfrequency(TFA9879*, int, int);
+uint8_t TFA_setDeviceControl(TFA9879*, int, int);
+uint8_t TFA_setLRchannel(TFA9879*, int, int);
