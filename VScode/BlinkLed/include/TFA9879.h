@@ -28,3 +28,7 @@ uint8_t TFA_setBassTreble(TFA9879*, int, int);
 uint8_t TFA_setBassTrebleCfrequency(TFA9879*, int, int);
 uint8_t TFA_setDeviceControl(TFA9879*, int, int);
 uint8_t TFA_setLRchannel(TFA9879*, int, int);
+uint8_t TFA_setI2SsampleFreq(TFA9879*, int, int);
+
+uint8_t TFA_parametricEQband(TFA9879*, int, float, int, float);
+uint8_t TFA_setBypassEQ(TFA9879*, int);

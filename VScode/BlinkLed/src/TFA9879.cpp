@@ -138,3 +138,184 @@ uint8_t TFA_setLRchannel(TFA9879 *TFA, int LRconf, int i2sChannel)
 
     return 1;
 }
+
+uint8_t TFA_setI2SsampleFreq(TFA9879 *TFA, int sampleRate, int i2sChannel){
+
+    if(i2sChannel == 0){
+        TFA->serialInterface1 = (TFA->serialInterface1 & ~(0b1111 << 6)) | (sampleRate << 6);
+
+        Wire.beginTransmission(TFA->I2Caddress);
+        Wire.write(0x01); // serial interface control 1 0x01
+        Wire.write(TFA->serialInterface1 >> 8);
+        Wire.write(TFA->serialInterface1);
+        Wire.endTransmission(true);
+
+        return 1;
+    }
+    else{
+        TFA->serialInterface2 = (TFA->serialInterface2 & ~(0b1111 << 6)) | (sampleRate << 6);
+
+        Wire.beginTransmission(TFA->I2Caddress);
+        Wire.write(0x03); // serial interface control 2 0x03
+        Wire.write(TFA->serialInterface2 >> 8);
+        Wire.write(TFA->serialInterface2);
+        Wire.endTransmission(true);
+
+        return 1;
+    }
+
+    return 1;
+}
+
+uint8_t TFA_parametricEQband(TFA9879 *TFA, int band, float Fc, int G, float Q){
+
+    float sampleRate = 48000;    //static sample rate for now
+
+    float sOmega = 2 * PI * (Fc / sampleRate);
+
+    if(G >= 0){
+        int K0 = 31 + G;
+        float K1 = -cos(sOmega);
+        float K2 = ((2*Q)-(sin(sOmega))) / ((2*Q)+(sin(sOmega)));
+
+        int t1 = 0;
+        if( K1 > 0 )
+            t1 = 1;
+
+        int t2 = 0;
+        if( K2 > 0 )
+            t2 = 1;
+
+        if( t1 == 0){
+            K1 = 1 + K1;
+        }
+        else{
+            K1 = 1 - K1;
+        }
+
+        if( t2 == 0){
+            K2 = 1 + K2;
+        }
+        else{
+            K2 = 1 - K2;
+        }
+
+        int k1M = 0, k1E = 0;
+
+        while(1){
+            if( (K1 * 2) >= 1 ){
+                k1M = (int)(K1 * pow(2, 11));
+                break;
+            }
+            else{
+                k1E++;
+                K1 *= 2;
+            }
+        }
+
+        int k2M = 0, k2E = 0;
+
+        while(1){
+            if( (K2 * 2) >= 1 ){
+                k2M = (int)(K2 * pow(2, 4));
+                break;
+            }
+            else{
+                k2E++;
+                K2 *= 2;
+            }
+        }
+
+        TFA->eqWord1[band] = (t1 << 15) | (k1M << 4) | (k1E << 0);
+        TFA->eqWord2[band] = (t2 << 15) | (k2M << 11) | (k2E << 8) | (K0 << 1);
+
+        Wire.beginTransmission(TFA->I2Caddress);
+        Wire.write(0x05+(band*2)); // EQ A word1 address 0x5, offset by band count
+        Wire.write(TFA->eqWord1[band] >> 8);
+        Wire.write(TFA->eqWord1[band]);
+        Wire.write(TFA->eqWord2[band] >> 8);
+        Wire.write(TFA->eqWord2[band]);
+        Wire.endTransmission(true);
+
+    }
+    else{
+        int K0 = G + 31;
+        float gain = pow(10, (G/10));
+        float K1 = -cos(sOmega);
+        float K2 = ((2*Q*gain)-(sin(sOmega))) / ((2*Q*gain)+(sin(sOmega)));
+
+        int t1 = 0;
+        if( K1 > 0 )
+            t1 = 1;
+
+        int t2 = 0;
+        if( K2 > 0 )
+            t2 = 1;
+
+        if( t1 == 0){
+            K1 = 1 + K1;
+        }
+        else{
+            K1 = 1 - K1;
+        }
+
+        if( t2 == 0){
+            K2 = 1 + K2;
+        }
+        else{
+            K2 = 1 - K2;
+        }
+
+        int k1M = 0, k1E = 0;
+
+        while(1){
+            if( (K1 * 2) >= 1 ){
+                k1M = (int)(K1 * pow(2, 11));
+                break;
+            }
+            else{
+                k1E++;
+                K1 *= 2;
+            }
+        }
+
+        int k2M = 0, k2E = 0;
+
+        while(1){
+            if( (K2 * 2) >= 1 ){
+                k2M = (int)(K2 * pow(2, 4));
+                break;
+            }
+            else{
+                k2E++;
+                K2 *= 2;
+            }
+        }
+
+        TFA->eqWord1[band] = (t1 << 15) | (k1M << 4) | (k1E << 0);
+        TFA->eqWord2[band] = (t2 << 15) | (k2M << 11) | (k2E << 8) | (K0 << 1);
+
+        Wire.beginTransmission(TFA->I2Caddress);
+        Wire.write(0x05+(band*2)); // EQ A word1 address 0x5, offset by band count
+        Wire.write(TFA->eqWord1[band] >> 8);
+        Wire.write(TFA->eqWord1[band]);
+        Wire.write(TFA->eqWord2[band] >> 8);
+        Wire.write(TFA->eqWord2[band]);
+        Wire.endTransmission(true);
+    }
+
+    return 1;
+}
+
+uint8_t TFA_setBypassEQ(TFA9879 *TFA, int bypassEQ){
+
+    TFA->bypassControl = (TFA->bypassControl & ~(1 << 0)) | (bypassEQ << 0);
+
+    Wire.beginTransmission(TFA->I2Caddress);
+    Wire.write(0x0F); // Bypass control 0x0F
+    Wire.write(TFA->bypassControl >> 8);
+    Wire.write(TFA->bypassControl);
+    Wire.endTransmission(true);
+
+    return 1;
+}

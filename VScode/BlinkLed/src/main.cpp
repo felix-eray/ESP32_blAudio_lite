@@ -3,8 +3,9 @@
 #include <driver/ledc.h>
 #include "Wire.h"
 #include "TFA9879.h"
+#include "BluetoothA2DPSink.h"
 
-uint8_t writeBassTreble(int , int , int );
+BluetoothA2DPSink a2dp_sink;
 
 ESP32Encoder encoder;
 TFA9879 TFA[2];
@@ -69,6 +70,15 @@ void setup() {
   TFA_setAddress(&TFA[0], 0b1101110); //upper SB closed
   TFA_setAddress(&TFA[1], 0b1101111); //both SBs open
 
+  i2s_pin_config_t my_pin_config = {
+        .bck_io_num = BCLK1,
+        .ws_io_num = LRCK1,
+        .data_out_num = SDI1,
+        .data_in_num = I2S_PIN_NO_CHANGE
+    };
+    a2dp_sink.set_pin_config(my_pin_config);
+    a2dp_sink.start("testBL");
+
   delay(10);
 
   ESP32Encoder::useInternalWeakPullResistors=UP;
@@ -78,21 +88,18 @@ void setup() {
 
   // configure PWM 
   ledcSetup(PWMChannel, freq, resolution);
-  
   // attach pin to be controlled
   ledcAttachPin(PWMPin, PWMChannel);
-
   //write PWM to output pin.
   ledcWrite(PWMChannel, dutyCycle);
 
   *((volatile uint32_t *) (IO_MUX_GPIO1_REG)) = ((*(volatile uint32_t *) (IO_MUX_GPIO1_REG)) & ~(3 << 10));// | (1 << 10);
+  //note, the ADC for the 3,5mm jack input needs the 12.288 MHz master clock and serial port will use that pin
+  //Serial.begin(115200);
 
   delay(100);
   digitalWrite(adcEN, HIGH);
   delay(100);
-
-  //note, the ADC for the 3,5mm jack input needs the 12.288 MHz master clock and serial port will use that pin
-  //Serial.begin(115200);
 
   TFA_setVolume(&TFA[0], 0);
   TFA_setBassTreble(&TFA[0], 5, 5);
@@ -101,14 +108,21 @@ void setup() {
   TFA_setVolume(&TFA[1], 0);
   TFA_setBassTreble(&TFA[1], 5, 5);
   TFA_setBassTrebleCfrequency(&TFA[1], 0, 2);
+  //TFA_setI2SsampleFreq(&TFA[1], 7, 0);
 
-  TFA_setLRchannel(&TFA[0], 0, 1);  //set TFA #1 amp's I2S-channel 2, to left channel only
-  TFA_setLRchannel(&TFA[1], 1, 1);  //set TFA #2 amp's I2S-channel 2, to right channel only
+  TFA_setLRchannel(&TFA[0], 2, 1);  //set TFA #1 amp's I2S-channel 2, to both channel only
+  TFA_setLRchannel(&TFA[1], 2, 1);  //set TFA #2 amp's I2S-channel 2, to both channel only
+
+  //TFA_parametricEQband(&TFA[0], 0, 100, -10, 1.0);
+  //TFA_parametricEQband(&TFA[1], 0, 100, 5, 1.0);
+
+  //TFA_setBypassEQ(&TFA[0], 0);
+  //TFA_setBypassEQ(&TFA[1], 0);
 
   delay(100);
 
   TFA_setDeviceControl(&TFA[0], 1, 1);  //TFA #1 amp, use I2S channel #2, power on and amp on
-  TFA_setDeviceControl(&TFA[1], 1, 1);  //TFA #2 amp, use I2S channel #2, power on and amp on
+  TFA_setDeviceControl(&TFA[1], 1, 1);  //TFA #2 amp, use I2S channel #1, power on and amp on
 
 }
 
