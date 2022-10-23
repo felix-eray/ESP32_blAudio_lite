@@ -5,6 +5,9 @@
 #include "TFA9879.h"
 #include "BluetoothA2DPSink.h"
 
+void buttonPress(void);
+void toggleAudioSource(void);
+
 BluetoothA2DPSink a2dp_sink;
 
 ESP32Encoder encoder;
@@ -23,9 +26,9 @@ const int encB = 25;
 const int adcEN = 21;
 const int ledPin1 = 16;
 const int ledPin2 = 17;
-const int pushButton1 = 4;
+const int pushButton3 = 4;
 const int pushButton2 = 2;
-const int pushButton3 = 15;
+const int pushButton1 = 15;
 const int I2C_SDA = 14;
 const int I2C_SCL = 27;
 const int pwrEN = 12;
@@ -56,6 +59,9 @@ void setup() {
   pinMode(pwrEN, OUTPUT);
   pinMode(en5V, OUTPUT);
   pinMode(anaPot, INPUT);
+  pinMode(pushButton1, INPUT_PULLUP);
+  pinMode(pushButton2, INPUT_PULLUP);
+  pinMode(pushButton3, INPUT_PULLUP);
 
   digitalWrite(adcEN, LOW);
   digitalWrite(pwrEN, HIGH);
@@ -71,13 +77,13 @@ void setup() {
   TFA_setAddress(&TFA[1], 0b1101111); //both SBs open
 
   i2s_pin_config_t my_pin_config = {
-        .bck_io_num = BCLK1,
-        .ws_io_num = LRCK1,
-        .data_out_num = SDI1,
-        .data_in_num = I2S_PIN_NO_CHANGE
-    };
-    a2dp_sink.set_pin_config(my_pin_config);
-    a2dp_sink.start("testBL");
+      .bck_io_num = BCLK1,
+      .ws_io_num = LRCK1,
+      .data_out_num = SDI1,
+      .data_in_num = I2S_PIN_NO_CHANGE
+  };
+  a2dp_sink.set_pin_config(my_pin_config);
+  //a2dp_sink.start("testBL");
 
   delay(10);
 
@@ -104,11 +110,12 @@ void setup() {
   TFA_setVolume(&TFA[0], 0);
   TFA_setBassTreble(&TFA[0], 5, 5);
   TFA_setBassTrebleCfrequency(&TFA[0], 0, 2);
+  TFA_setI2SsampleFreq(&TFA[0], 7, 0);  //set sample frequency for I2S-channel 1 to 44,1kHz for bluetooth
 
   TFA_setVolume(&TFA[1], 0);
   TFA_setBassTreble(&TFA[1], 5, 5);
   TFA_setBassTrebleCfrequency(&TFA[1], 0, 2);
-  //TFA_setI2SsampleFreq(&TFA[1], 7, 0);
+  TFA_setI2SsampleFreq(&TFA[1], 7, 0);  //set sample frequency for I2S-channel 1 to 44,1kHz for bluetooth
 
   TFA_setLRchannel(&TFA[0], 2, 1);  //set TFA #1 amp's I2S-channel 2, to both channel only
   TFA_setLRchannel(&TFA[1], 2, 1);  //set TFA #2 amp's I2S-channel 2, to both channel only
@@ -122,7 +129,7 @@ void setup() {
   delay(100);
 
   TFA_setDeviceControl(&TFA[0], 1, 1);  //TFA #1 amp, use I2S channel #2, power on and amp on
-  TFA_setDeviceControl(&TFA[1], 1, 1);  //TFA #2 amp, use I2S channel #1, power on and amp on
+  TFA_setDeviceControl(&TFA[1], 1, 1);  //TFA #2 amp, use I2S channel #2, power on and amp on
 
 }
 
@@ -130,6 +137,8 @@ void setup() {
 void loop() {
   static uint32_t tick_volumeAnaRead = millis();
   static uint32_t tick_blinkLed = millis();
+  static uint32_t tick_buttonChecks = millis();
+  static uint32_t button1debounce = 0;
 
   //non-blocking led blink
   if( tick_blinkLed < millis() ){
@@ -137,18 +146,17 @@ void loop() {
     tick_blinkLed = tick_blinkLed + 1000;
 
     if( ledState == 0 ){
-      digitalWrite(ledPin1, HIGH);   // turn the LED on (HIGH is the voltage level)
+      //digitalWrite(ledPin1, HIGH);   // turn the LED on (HIGH is the voltage level)
       digitalWrite(ledPin2, HIGH);   // turn the LED on (HIGH is the voltage level)
       ledState = 1;
     }
     else{
-      digitalWrite(ledPin1, LOW);    // turn the LED off by making the voltage LOW
+      //digitalWrite(ledPin1, LOW);    // turn the LED off by making the voltage LOW
       digitalWrite(ledPin2, LOW);    // turn the LED off by making the voltage LOW
       ledState = 0;
     }
   }
 
-  
   //read analog pot reading roughly every 100ms and update volume if reading has changed enough to indicate that the knob has been turned
   if( tick_volumeAnaRead < millis() ){
     static int volumeOld = 0;
@@ -176,9 +184,70 @@ void loop() {
       }
     }
   }
+
+  if( tick_buttonChecks < millis() ){
+    tick_buttonChecks = tick_buttonChecks + 1;
+    buttonPress();
+  }
+
   
-  
-  
-  //Serial.println(encoder.getCount());
-  //Serial.println(analogRead(anaPot));
+}
+
+void buttonPress(){
+  static uint16_t button1Debounce = 0, button1press = 0;
+
+
+  if( digitalRead(pushButton1) == 0 && button1Debounce == 0 ){  //increase counter for how long button has been pressed
+    button1press++;
+  }
+  else if( digitalRead(pushButton1) == 1 && button1Debounce != 0 ){ //start decreasing debounce
+    button1Debounce--;
+  }
+
+  if( digitalRead(pushButton1) == 0 && button1press == 1500 ){  //long hold >1,5seconds, executed only once
+    toggleAudioSource();
+
+    button1press = 0;
+    button1Debounce = 20;
+  }
+  else if( digitalRead(pushButton1) == 1 && button1press != 0 ){  //short press <1,5 seconds
+    /*
+    if(digitalRead(ledPin1) == 1){
+      digitalWrite(ledPin1, LOW);
+    }
+    else{
+      digitalWrite(ledPin1, HIGH);
+    }
+    */
+
+    button1press = 0;
+    button1Debounce = 20;
+  }
+
+}
+
+void toggleAudioSource(){
+  static uint8_t source = 0;
+
+  if(source == 0){
+    a2dp_sink.start("testBL");
+    digitalWrite(ledPin1, HIGH);
+    delay(100);
+
+    TFA_setDeviceControl(&TFA[0], 1, 0);  //TFA #1 amp, use I2S channel #1, power on and amp on
+    TFA_setDeviceControl(&TFA[1], 1, 0);  //TFA #2 amp, use I2S channel #1, power on and amp on
+
+    source = 1;
+
+  }
+  else{
+    a2dp_sink.end();
+    digitalWrite(ledPin1, LOW);
+    delay(100);
+
+    TFA_setDeviceControl(&TFA[0], 1, 1);  //TFA #1 amp, use I2S channel #2, power on and amp on
+    TFA_setDeviceControl(&TFA[1], 1, 1);  //TFA #2 amp, use I2S channel #2, power on and amp on
+
+    source = 0;
+  }
 }

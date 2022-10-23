@@ -104,7 +104,7 @@ uint8_t TFA_setDeviceControl(TFA9879 *TFA, int powerMode, int i2sInput)
     Wire.beginTransmission(TFA->I2Caddress);
     Wire.write(0x00); // device control 0x00
     Wire.write(TFA->deviceControl >> 8);
-    Wire.write(TFA->deviceControl); // input 2, amp output on, TF9789 powered
+    Wire.write(TFA->deviceControl);
     Wire.endTransmission(true);
 
     return 1;
