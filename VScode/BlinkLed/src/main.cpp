@@ -4,6 +4,14 @@
 #include "Wire.h"
 #include "TFA9879.h"
 #include "BluetoothA2DPSink.h"
+#include "LiquidCrystal_I2C.h"
+
+#define COLUMS 20
+#define ROWS   4
+
+#define PAGE   ((COLUMS) * (ROWS))
+
+LiquidCrystal_I2C lcd(PCF8574_ADDR_A21_A11_A01, 4, 5, 6, 16, 11, 12, 13, 14, POSITIVE);
 
 void buttonPress(void);
 void toggleAudioSource(void);
