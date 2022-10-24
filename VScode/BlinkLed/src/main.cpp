@@ -195,6 +195,8 @@ void loop() {
 
 void buttonPress(){
   static uint16_t button1Debounce = 0, button1press = 0;
+  static uint16_t button2Debounce = 0, button2press = 0;
+  static uint16_t button3Debounce = 0, button3press = 0;
 
 
   if( digitalRead(pushButton1) == 0 && button1Debounce == 0 ){  //increase counter for how long button has been pressed
@@ -211,17 +213,46 @@ void buttonPress(){
     button1Debounce = 20;
   }
   else if( digitalRead(pushButton1) == 1 && button1press != 0 ){  //short press <1,5 seconds
-    /*
-    if(digitalRead(ledPin1) == 1){
-      digitalWrite(ledPin1, LOW);
-    }
-    else{
-      digitalWrite(ledPin1, HIGH);
-    }
-    */
 
     button1press = 0;
     button1Debounce = 20;
+  }
+
+  if( digitalRead(pushButton2) == 0 && button2Debounce == 0 ){  //increase counter for how long button has been pressed
+    button2press++;
+  }
+  else if( digitalRead(pushButton2) == 1 && button2Debounce != 0 ){ //start decreasing debounce
+    button2Debounce--;
+  }
+
+  if( digitalRead(pushButton2) == 0 && button2press == 1500 ){  //long hold >1,5seconds, executed only once
+
+    button2press = 0;
+    button2Debounce = 20;
+  }
+  else if( digitalRead(pushButton2) == 1 && button2press != 0 ){  //short press <1,5 seconds
+
+    button2press = 0;
+    button2Debounce = 20;
+  }
+
+  if( digitalRead(pushButton3) == 0 && button3Debounce == 0 ){  //increase counter for how long button has been pressed
+    button3press++;
+  }
+  else if( digitalRead(pushButton3) == 1 && button3Debounce != 0 ){ //start decreasing debounce
+    button3Debounce--;
+  }
+
+  if( digitalRead(pushButton3) == 0 && button3press == 1500 ){  //long hold >1,5seconds, executed only once
+    digitalWrite(pwrEN, LOW);
+
+    button3press = 0;
+    button3Debounce = 20;
+  }
+  else if( digitalRead(pushButton3) == 1 && button3press != 0 ){  //short press <1,5 seconds
+
+    button3press = 0;
+    button3Debounce = 20;
   }
 
 }
