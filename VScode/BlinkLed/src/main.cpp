@@ -11,7 +11,7 @@
 
 #define PAGE   ((COLUMS) * (ROWS))
 
-LiquidCrystal_I2C lcd(PCF8574_ADDR_A21_A11_A01, 4, 5, 6, 16, 11, 12, 13, 14, POSITIVE);
+LiquidCrystal_I2C lcd((PCF8574_address)0b0111111, 4, 5, 6, 16, 11, 12, 13, 14, POSITIVE);
 
 void buttonPress(void);
 void toggleAudioSource(void);
@@ -73,7 +73,7 @@ void setup() {
 
   digitalWrite(adcEN, LOW);
   digitalWrite(pwrEN, HIGH);
-  digitalWrite(en5V, LOW);
+  digitalWrite(en5V, HIGH);
 
   Wire.setPins((int)I2C_SDA, (int)I2C_SCL);
   Wire.begin(I2C_SDA, I2C_SCL, (uint32_t)100000);
@@ -109,7 +109,7 @@ void setup() {
 
   *((volatile uint32_t *) (IO_MUX_GPIO1_REG)) = ((*(volatile uint32_t *) (IO_MUX_GPIO1_REG)) & ~(3 << 10));// | (1 << 10);
   //note, the ADC for the 3,5mm jack input needs the 12.288 MHz master clock and serial port will use that pin
-  //Serial.begin(115200);
+  Serial.begin(115200);
 
   delay(100);
   digitalWrite(adcEN, HIGH);
@@ -138,6 +138,21 @@ void setup() {
 
   TFA_setDeviceControl(&TFA[0], 1, 1);  //TFA #1 amp, use I2S channel #2, power on and amp on
   TFA_setDeviceControl(&TFA[1], 1, 1);  //TFA #2 amp, use I2S channel #2, power on and amp on
+
+  uint8_t test = lcd.begin(COLUMS, ROWS, LCD_5x8DOTS);
+
+  Serial.println(test);
+
+  lcd.print(F("PCF8574 is OK...")); //(F()) saves string to flash & keeps dynamic memory free
+  delay(2000);
+
+  lcd.clear();
+
+  /* prints static text */
+  lcd.setCursor(0, 1);            //set 1-st colum & 2-nd row, 1-st colum & row started at zero
+  lcd.print(F("Hello world!"));
+  lcd.setCursor(0, 2);            //set 1-st colum & 3-rd row, 1-st colum & row started at zero
+  lcd.print(F("Random number:"));
 
 }
 
@@ -269,7 +284,7 @@ void toggleAudioSource(){
   static uint8_t source = 0;
 
   if(source == 0){
-    a2dp_sink.start("testBL");
+    a2dp_sink.start("testBL", 1);
     digitalWrite(ledPin1, HIGH);
     delay(100);
 
