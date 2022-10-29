@@ -16,7 +16,96 @@ LiquidCrystal_I2C lcd((PCF8574_address)0b0111111, 4, 5, 6, 16, 11, 12, 13, 14, P
 void buttonPress(void);
 void toggleAudioSource(void);
 
-BluetoothA2DPSink a2dp_sink;
+class customA2DPcommon: public BluetoothA2DPCommon{
+    void end(bool release_memory) {
+      // reconnect should not work after end
+      is_start_disabled = false;
+      clean_last_connection();
+      log_free_heap();
+
+      // Disconnect
+      disconnect();
+      while(is_connected()){
+          delay(100);
+      }
+
+      // deinit AVRC
+      ESP_LOGI(BT_AV_TAG,"deinit avrc");
+      if (esp_avrc_ct_deinit() != ESP_OK){
+          ESP_LOGE(BT_AV_TAG,"Failed to deinit avrc");
+      }
+      log_free_heap();
+
+      if (release_memory) {
+
+          ESP_LOGI(BT_AV_TAG,"disable bluetooth");
+          if (esp_bluedroid_disable() != ESP_OK){
+              ESP_LOGE(BT_AV_TAG,"Failed to disable bluetooth");
+          }
+          log_free_heap();
+
+      
+          ESP_LOGI(BT_AV_TAG,"deinit bluetooth");
+          if (esp_bluedroid_deinit() != ESP_OK){
+              ESP_LOGE(BT_AV_TAG,"Failed to deinit bluetooth");
+          }
+          log_free_heap();
+
+
+          ESP_LOGI(BT_AV_TAG,"esp_bt_controller_disable");
+          if (esp_bt_controller_disable()!=ESP_OK){
+              ESP_LOGE(BT_AV_TAG,"esp_bt_controller_disable failed");
+          }
+          log_free_heap();
+
+          // waiting for status change
+          while(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED)
+              delay(50);
+
+          if(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED){
+              ESP_LOGI(BT_AV_TAG,"esp_bt_controller_deinit");
+              if (esp_bt_controller_deinit()!= ESP_OK){
+                  ESP_LOGE(BT_AV_TAG,"esp_bt_controller_deinit failed");
+              }
+              log_free_heap();
+          }
+      
+          // after a release memory - a restart will not be possible
+          ESP_LOGI(BT_AV_TAG,"esp_bt_controller_mem_release");
+          if (esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT)!= ESP_OK){
+              ESP_LOGE(BT_AV_TAG,"esp_bt_controller_mem_release failed");
+          }
+          log_free_heap();
+          is_start_disabled = true;
+
+      } 
+
+      log_free_heap();
+  }
+};
+
+class customA2DPsink: public BluetoothA2DPSink{
+  public:
+    void end(bool release_memory) {
+      // reconnect should not work after end
+      is_autoreconnect_allowed = false;
+      customA2DPcommon::end(release_memory);
+
+      // stop I2S
+      if (is_i2s_output){
+          ESP_LOGI(BT_AV_TAG,"uninstall i2s");
+          if (i2s_driver_uninstall(i2s_port) != ESP_OK){
+              ESP_LOGE(BT_AV_TAG,"Failed to uninstall i2s");
+          }
+          else {
+              player_init = false;
+          }
+      }
+      log_free_heap();
+  }
+};
+
+customA2DPsink a2dp_sink;
 
 ESP32Encoder encoder;
 TFA9879 TFA[2];
@@ -295,7 +384,7 @@ void toggleAudioSource(){
 
   }
   else{
-    a2dp_sink.end();
+    a2dp_sink.end(false);
     digitalWrite(ledPin1, LOW);
     delay(100);
 
