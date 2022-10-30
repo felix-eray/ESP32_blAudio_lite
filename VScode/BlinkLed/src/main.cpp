@@ -76,7 +76,7 @@ void setup() {
   digitalWrite(en5V, HIGH);
 
   Wire.setPins((int)I2C_SDA, (int)I2C_SCL);
-  Wire.begin(I2C_SDA, I2C_SCL, (uint32_t)100000);
+  Wire.begin(I2C_SDA, I2C_SCL, (uint32_t)200000);
 
   TFA_init(&TFA[0]);
   TFA_init(&TFA[1]);
@@ -91,7 +91,6 @@ void setup() {
       .data_in_num = I2S_PIN_NO_CHANGE
   };
   a2dp_sink.set_pin_config(my_pin_config);
-  //a2dp_sink.start("testBL");
 
   delay(10);
 
@@ -109,7 +108,7 @@ void setup() {
 
   *((volatile uint32_t *) (IO_MUX_GPIO1_REG)) = ((*(volatile uint32_t *) (IO_MUX_GPIO1_REG)) & ~(3 << 10));// | (1 << 10);
   //note, the ADC for the 3,5mm jack input needs the 12.288 MHz master clock and serial port will use that pin
-  Serial.begin(115200);
+  //Serial.begin(115200);
 
   delay(100);
   digitalWrite(adcEN, HIGH);
@@ -149,7 +148,7 @@ void setup() {
   lcd.clear();
 
   /* prints static text */
-  lcd.setCursor(0, 1);            //set 1-st colum & 2-nd row, 1-st colum & row started at zero
+  lcd.setCursor(3, 1);            //set 1-st colum & 2-nd row, 1-st colum & row started at zero
   lcd.print(F("Hello world!"));
   lcd.setCursor(0, 2);            //set 1-st colum & 3-rd row, 1-st colum & row started at zero
   lcd.print(F("Random number:"));
@@ -161,7 +160,12 @@ void loop() {
   static uint32_t tick_volumeAnaRead = millis();
   static uint32_t tick_blinkLed = millis();
   static uint32_t tick_buttonChecks = millis();
-  static uint32_t button1debounce = 0;
+  static uint32_t loop = 1000000000;
+
+  lcd.setCursor(0, 0);            //set 1-st colum & 2-nd row, 1-st colum & row started at zero
+  lcd.print("0123456789abcdef0123456789abcd");
+  lcd.print(loop);
+  loop++;
 
   //non-blocking led blink
   if( tick_blinkLed < millis() ){
@@ -222,60 +226,60 @@ void buttonPress(){
   static uint16_t button3Debounce = 0, button3press = 0;
 
 
-  if( digitalRead(pushButton1) == 0 && button1Debounce == 0 ){  //increase counter for how long button has been pressed
-    button1press++;
+  if( digitalRead(pushButton1) == 0 && button1Debounce == 0 && button1press == 0 ){  //increase counter for how long button has been pressed
+    button1press = millis();
   }
-  else if( digitalRead(pushButton1) == 1 && button1Debounce != 0 ){ //start decreasing debounce
-    button1Debounce--;
+  else if( digitalRead(pushButton1) == 1 && (millis() - button1Debounce) >= 30 ){ //start decreasing debounce
+    button1Debounce = 0;
   }
 
-  if( digitalRead(pushButton1) == 0 && button1press == 1500 ){  //long hold >1,5seconds, executed only once
+  if( digitalRead(pushButton1) == 0 && (millis() - button1press) >= 1500 && button1press != 0 ){  //long hold >1,5seconds, executed only once
     toggleAudioSource();
 
     button1press = 0;
-    button1Debounce = 20;
+    button1Debounce = millis();
   }
   else if( digitalRead(pushButton1) == 1 && button1press != 0 ){  //short press <1,5 seconds
 
     button1press = 0;
-    button1Debounce = 20;
+    button1Debounce = millis();
   }
 
-  if( digitalRead(pushButton2) == 0 && button2Debounce == 0 ){  //increase counter for how long button has been pressed
-    button2press++;
+  if( digitalRead(pushButton2) == 0 && button2Debounce == 0 && button2press == 0 ){  //increase counter for how long button has been pressed
+    button2press = millis();
   }
-  else if( digitalRead(pushButton2) == 1 && button2Debounce != 0 ){ //start decreasing debounce
-    button2Debounce--;
+  else if( digitalRead(pushButton2) == 1 && (millis() - button2Debounce) >= 30 ){ //start decreasing debounce
+    button2Debounce = 0;
   }
 
-  if( digitalRead(pushButton2) == 0 && button2press == 1500 ){  //long hold >1,5seconds, executed only once
+  if( digitalRead(pushButton2) == 0 && (millis() - button2press) >= 1500 && button2press != 0 ){  //long hold >1,5seconds, executed only once
 
     button2press = 0;
-    button2Debounce = 20;
+    button2Debounce = millis();
   }
   else if( digitalRead(pushButton2) == 1 && button2press != 0 ){  //short press <1,5 seconds
 
     button2press = 0;
-    button2Debounce = 20;
+    button2Debounce = millis();
   }
 
-  if( digitalRead(pushButton3) == 0 && button3Debounce == 0 ){  //increase counter for how long button has been pressed
-    button3press++;
+  if( digitalRead(pushButton3) == 0 && button3Debounce == 0 && button3press == 0 ){  //increase counter for how long button has been pressed
+    button3press = millis();
   }
-  else if( digitalRead(pushButton3) == 1 && button3Debounce != 0 ){ //start decreasing debounce
-    button3Debounce--;
+  else if( digitalRead(pushButton3) == 1 && (millis() - button3Debounce) >= 30 ){ //start decreasing debounce
+    button3Debounce = 0;
   }
 
-  if( digitalRead(pushButton3) == 0 && button3press == 1500 ){  //long hold >1,5seconds, executed only once
+  if( digitalRead(pushButton3) == 0 && (millis() - button3press) >= 1500 && button3press != 0 ){  //long hold >1,5seconds, executed only once
     digitalWrite(pwrEN, LOW);
 
     button3press = 0;
-    button3Debounce = 20;
+    button3Debounce = millis();
   }
   else if( digitalRead(pushButton3) == 1 && button3press != 0 ){  //short press <1,5 seconds
 
     button3press = 0;
-    button3Debounce = 20;
+    button3Debounce = millis();
   }
 
 }
