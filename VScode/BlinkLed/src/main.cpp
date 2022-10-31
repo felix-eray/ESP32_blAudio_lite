@@ -163,7 +163,9 @@ void loop() {
   static uint32_t loop = 1000000000;
 
   lcd.setCursor(0, 0);            //set 1-st colum & 2-nd row, 1-st colum & row started at zero
-  lcd.print("0123456789abcdef0123456789abcd");
+  lcd.print("0123456789abcdef");
+  lcd.setCursor(0, 1);  
+  lcd.print("012345");
   lcd.print(loop);
   loop++;
 
@@ -221,15 +223,15 @@ void loop() {
 }
 
 void buttonPress(){
-  static uint16_t button1Debounce = 0, button1press = 0;
-  static uint16_t button2Debounce = 0, button2press = 0;
-  static uint16_t button3Debounce = 0, button3press = 0;
+  static uint32_t button1Debounce = 0, button1press = 0;
+  static uint32_t button2Debounce = 0, button2press = 0;
+  static uint32_t button3Debounce = 0, button3press = 0;
 
 
   if( digitalRead(pushButton1) == 0 && button1Debounce == 0 && button1press == 0 ){  //increase counter for how long button has been pressed
     button1press = millis();
   }
-  else if( digitalRead(pushButton1) == 1 && (millis() - button1Debounce) >= 30 ){ //start decreasing debounce
+  else if( digitalRead(pushButton1) == 1 && (millis() - button1Debounce) >= 30  && button1Debounce != 0 ){ //start decreasing debounce
     button1Debounce = 0;
   }
 
@@ -248,7 +250,7 @@ void buttonPress(){
   if( digitalRead(pushButton2) == 0 && button2Debounce == 0 && button2press == 0 ){  //increase counter for how long button has been pressed
     button2press = millis();
   }
-  else if( digitalRead(pushButton2) == 1 && (millis() - button2Debounce) >= 30 ){ //start decreasing debounce
+  else if( digitalRead(pushButton2) == 1 && (millis() - button2Debounce) >= 30 && button2Debounce != 0 ){ //start decreasing debounce
     button2Debounce = 0;
   }
 
@@ -266,7 +268,7 @@ void buttonPress(){
   if( digitalRead(pushButton3) == 0 && button3Debounce == 0 && button3press == 0 ){  //increase counter for how long button has been pressed
     button3press = millis();
   }
-  else if( digitalRead(pushButton3) == 1 && (millis() - button3Debounce) >= 30 ){ //start decreasing debounce
+  else if( digitalRead(pushButton3) == 1 && (millis() - button3Debounce) >= 30  && button3Debounce != 0 ){ //start decreasing debounce
     button3Debounce = 0;
   }
 
